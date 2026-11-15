@@ -24,6 +24,7 @@ const inventarioRoutes = require('./routes/inventario');
 const chatRoutes = require('./routes/chat');
 const ticketsRoutes = require('./routes/tickets'); // <--- Importar tickets
 const notificacionesRoutes = require('./routes/notificaciones'); // <--- Notificaciones
+const aiRoutes = require('./routes/ai'); // <--- Inteligencia Artificial (Gemini)
 
 // 3. Inicializar la aplicación de Express
 const app = express();
@@ -84,6 +85,7 @@ app.use('/api/tickets', ticketsRoutes); // <--- Rutas de tickets
 app.use('/api/mecanico', mecanicoRoutes);
 app.use('/api/taller/citas', require('./routes/taller_citas'));
 app.use('/api/notificaciones', notificacionesRoutes); // <--- Notificaciones
+app.use('/api/ai', aiRoutes); // <--- Rutas de Inteligencia Artificial
 
 
 // 5. Rutas
