@@ -357,7 +357,19 @@ router.get('/:id/cotizacion', isAuthenticated, async (req, res) => {
 
         // Obtener cabecera
         const [cotizacion] = await db.query('SELECT * FROM cotizacion WHERE idCita = ?', [id]);
-        if (cotizacion.length === 0) return res.status(404).json({ error: 'Cotización no encontrada' });
+        if (cotizacion.length === 0) {
+            const [citaData] = await db.query('SELECT monto FROM cita WHERE idCita = ?', [id]);
+            const montoCita = (citaData.length > 0 && citaData[0].monto) ? citaData[0].monto : 0;
+            return res.json({
+                idCotizacion: null,
+                diagnostico: 'Servicio Automotriz Realizado',
+                descripcion: 'Servicio Automotriz Realizado',
+                totalAprobado: montoCita,
+                costoTotal: montoCita,
+                fechaCotizacion: new Date(),
+                servicios: []
+            });
+        }
 
         const cot = cotizacion[0];
 
@@ -397,8 +409,8 @@ router.put('/:id/confirmar-entrega-codigo', isAuthenticated, async (req, res) =>
             return res.status(400).json({ error: 'La cita no está en estado de liberar.' });
         }
 
-        if (cita[0].codigo_pago_efectivo !== codigo) {
-            return res.status(400).json({ error: 'Código de pago incorrecto.' });
+        if (!cita[0].codigo_pago_efectivo || cita[0].codigo_pago_efectivo.trim().toUpperCase() !== String(codigo).trim().toUpperCase()) {
+            return res.status(400).json({ error: 'Código de pago incorrecto o no coincide con el generado por el taller.' });
         }
 
         await db.query('UPDATE cita SET estado = "Completado" WHERE idCita = ?', [id]);

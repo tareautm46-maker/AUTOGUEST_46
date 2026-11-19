@@ -82,21 +82,38 @@
                     sessionStorage.setItem('userId', data.userId || '');
                     sessionStorage.setItem('userRole', 'mecanico');
 
-                    // Redirigir al portal de mecánicos
-                    window.location.href = 'portal_mecanico.html';
+                    if (window.showToast) {
+                        window.showToast('¡Bienvenido! Accediendo al portal...', 'success', 2000);
+                    } else {
+                        alert('¡Bienvenido! Accediendo al portal...');
+                    }
+
+                    // Redirigir al portal de mecánicos con breve pausa
+                    setTimeout(() => {
+                        window.location.href = 'portal_mecanico.html';
+                    }, 1200);
                 } else {
-                    alert(data.mensaje || 'Credenciales incorrectas');
+                    if (window.showToast) {
+                        window.showToast(data.mensaje || 'Credenciales incorrectas', 'error');
+                    } else {
+                        alert(data.mensaje || 'Credenciales incorrectas');
+                    }
                     btn.innerText = textoOriginal;
                     btn.disabled = false;
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Error de conexión con el servidor');
+                if (window.showToast) {
+                    window.showToast('Error de conexión con el servidor', 'error');
+                } else {
+                    alert('Error de conexión con el servidor');
+                }
                 btn.innerText = textoOriginal;
                 btn.disabled = false;
             }
         });
     </script>
+    <script src="/js/toast.js"></script>
     <script src="/js/global_nav.js"></script>
 </body>
 

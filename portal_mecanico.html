@@ -824,11 +824,11 @@
 
             <!-- Ajustes Dropdown -->
             <div class="settings-container" id="settingsMenu">
-                <button class="settings-btn" onclick="toggleSettingsMenu(event)">
+                <button class="settings-btn" id="settingsTriggerBtn" title="Ajustes y Opciones">
                     <i class="fas fa-cog"></i>
                 </button>
                 <div class="settings-dropdown" id="settingsDropdown">
-                    <a href="pages/mecanico/perfil_mecanico.html"><i class="fas fa-user"></i> Perfil</a>
+                    <a href="pages/mecanico/perfil_mecanico.html"><i class="fas fa-user"></i> Mi Perfil</a>
                     <a href="#" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
                 </div>
             </div>
@@ -1649,24 +1649,6 @@
         <img id="chatLightboxImg" src="" alt="Imagen ampliada">
     </div>
 
-    <script>
-        // --- FUNCIONES DEL MENÚ DE AJUSTES ---
-        function toggleSettingsMenu(event) {
-            event.stopPropagation();
-            const container = document.getElementById('settingsMenu');
-            container.classList.toggle('active');
-        }
-
-        // Cerrar el menú si se hace click fuera de él
-        document.addEventListener('click', function (event) {
-            const container = document.getElementById('settingsMenu');
-            const dropdown = document.getElementById('settingsDropdown');
-            if (container && container.classList.contains('active') && !container.contains(event.target)) {
-                container.classList.remove('active');
-            }
-        });
-    </script>
-
     <nav class="mobile-bottom-nav">
         <a href="portal_mecanico.html" class="nav-item active">
             <i class="fas fa-wrench"></i>
@@ -1686,6 +1668,7 @@
         </a>
     </nav>
 
+    <script src="js/toast.js"></script>
     <script src="js/notifications.js"></script>
     <script src="/js/global_nav.js"></script>
 </body>

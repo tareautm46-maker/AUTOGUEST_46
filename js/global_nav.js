@@ -1,3 +1,11 @@
+// Auto-cargar el sistema de Toast moderno de AutoGuest si no está presente
+if (!window.showToast && !document.getElementById('autoguest-toast-script')) {
+    const toastScript = document.createElement('script');
+    toastScript.id = 'autoguest-toast-script';
+    toastScript.src = '/js/toast.js';
+    document.head.appendChild(toastScript);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const pathname = window.location.pathname.toLowerCase();
 

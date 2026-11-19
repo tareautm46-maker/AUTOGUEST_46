@@ -68,24 +68,38 @@
                     sessionStorage.setItem('isLoggedIn', 'true');
                     sessionStorage.setItem('userRole', 'taller');
                     sessionStorage.setItem('userName', data.userName);
-
                     sessionStorage.setItem('tallerName', data.tallerName);
                     
-                    alert('¡Bienvenido! Accediendo al panel...');
+                    if (window.showToast) {
+                        window.showToast('¡Bienvenido! Accediendo al panel...', 'success', 2000);
+                    } else {
+                        alert('¡Bienvenido! Accediendo al panel...');
+                    }
                     
-                    // 3. Redirigir (Asegúrate que portal_taller.html está en public/)
-                    window.location.href = 'portal_taller.html'; 
+                    // 3. Redirigir con breve pausa para ver la confirmación
+                    setTimeout(() => {
+                        window.location.href = 'portal_taller.html'; 
+                    }, 1200);
                 } else {
                     // 4. Mostrar error si falla
-                    alert('Error: ' + (data.mensaje || 'Credenciales incorrectas'));
+                    if (window.showToast) {
+                        window.showToast(data.mensaje || 'Credenciales incorrectas', 'error');
+                    } else {
+                        alert('Error: ' + (data.mensaje || 'Credenciales incorrectas'));
+                    }
                 }
 
             } catch (error) {
                 console.error('Error de conexión:', error);
-                alert('No se pudo conectar con el servidor. Verifica que node server.js esté corriendo.');
+                if (window.showToast) {
+                    window.showToast('No se pudo conectar con el servidor. Verifica tu conexión.', 'error');
+                } else {
+                    alert('No se pudo conectar con el servidor.');
+                }
             }
         });
     </script>
+    <script src="/js/toast.js"></script>
     <script src="/js/global_nav.js"></script>
 </body>
 </html>

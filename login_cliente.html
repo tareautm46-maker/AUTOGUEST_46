@@ -72,20 +72,34 @@
                     sessionStorage.setItem('userName', data.userName);
                     sessionStorage.setItem('userId', data.userId); // Guardar userId para imágenes de perfil
 
-                    alert(data.mensaje || '¡Inicio de sesión exitoso!');
-                    // Redirigir a la página que indica el servidor
-                    window.location.href = data.redirectTo;
+                    if (window.showToast) {
+                        window.showToast(data.mensaje || '¡Inicio de sesión exitoso!', 'success', 2000);
+                    } else {
+                        alert(data.mensaje || '¡Inicio de sesión exitoso!');
+                    }
+                    // Redirigir a la página que indica el servidor con breve pausa
+                    setTimeout(() => {
+                        window.location.href = data.redirectTo;
+                    }, 1200);
                 } else {
-                    alert('Error: ' + (data.mensaje || 'Credenciales incorrectas.'));
+                    if (window.showToast) {
+                        window.showToast(data.mensaje || 'Credenciales incorrectas.', 'error');
+                    } else {
+                        alert('Error: ' + (data.mensaje || 'Credenciales incorrectas.'));
+                    }
                 }
 
             } catch (error) {
                 console.error('Error de conexión:', error);
-                // El error de JSON inválido suele ocurrir aquí cuando hay un 404
-                alert('No se pudo conectar con el servidor o las credenciales son incorrectas.');
+                if (window.showToast) {
+                    window.showToast('No se pudo conectar con el servidor o las credenciales son incorrectas.', 'error');
+                } else {
+                    alert('No se pudo conectar con el servidor.');
+                }
             }
         });
     </script>
+    <script src="/js/toast.js"></script>
     <script src="/js/global_nav.js"></script>
 </body>
 

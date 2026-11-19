@@ -22,3 +22,4 @@ brain/
 *.sql
 migrate_to_aiven.js
 clean_database.js
+scratch/

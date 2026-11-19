@@ -2,10 +2,10 @@ const express = require('express');
 const router = express.Router();
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-// Modelos compatibles con auto-fallback en caso de alta demanda o cambios de versión
-const GEMINI_MODELS = ['gemini-3.5-flash', 'gemini-3.1-flash-lite', 'gemini-3.6-flash', 'gemini-3.8-flash'];
+// Modelos compatibles con auto-fallback: colocar primero los modelos ultrarrápidos y de alta disponibilidad
+const GEMINI_MODELS = ['gemini-3.1-flash-lite', 'gemini-3.5-flash-lite', 'gemini-3.1-pro-preview', 'gemini-3.5-flash'];
 
-// Helper para invocar la API de Gemini mediante fetch nativo con reintento automático
+// Helper para invocar la API de Gemini mediante fetch nativo con timeout y reintento automático
 async function callGemini(contents, systemInstruction = null, responseMimeType = null) {
     if (!GEMINI_API_KEY) {
         throw new Error('GEMINI_API_KEY no está configurada en las variables de entorno.');
@@ -35,10 +35,12 @@ async function callGemini(contents, systemInstruction = null, responseMimeType =
                 body.generationConfig.responseMimeType = responseMimeType;
             }
 
+            // Timeout defensivo de 12 segundos por modelo para evitar colgar la petición en Render
             const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
+                body: JSON.stringify(body),
+                signal: AbortSignal.timeout(12000)
             });
 
             if (!response.ok) {
@@ -50,12 +52,23 @@ async function callGemini(contents, systemInstruction = null, responseMimeType =
 
             const data = await response.json();
             const candidate = data.candidates?.[0];
-            if (!candidate || !candidate.content?.parts?.[0]?.text) {
+            if (!candidate || !candidate.content?.parts) {
                 console.warn(`[AI Warning] Modelo ${model} devolvió contenido vacío. Reintentando...`);
                 continue;
             }
 
-            return candidate.content.parts[0].text;
+            // Extraer y concatenar el texto de todas las partes (omitiendo metadatos como thoughtSignature)
+            const textContent = candidate.content.parts
+                .filter(p => p.text)
+                .map(p => p.text)
+                .join('');
+
+            if (!textContent.trim()) {
+                console.warn(`[AI Warning] Modelo ${model} texto vacío. Reintentando...`);
+                continue;
+            }
+
+            return textContent;
         } catch (callErr) {
             console.warn(`[AI Warning] Error de conexión con modelo ${model}:`, callErr.message);
             lastError = callErr;
@@ -144,7 +157,26 @@ Debes responder ESTRICTAMENTE en formato JSON válido con la siguiente estructur
         const contents = [{ role: 'user', parts: [{ text: promptUsuario }] }];
         const rawJson = await callGemini(contents, systemPrompt, 'application/json');
 
-        const diagnostico = JSON.parse(rawJson);
+        let cleanJson = (rawJson || '').trim();
+        // Limpiar posibles bloques markdown ```json ... ```
+        if (cleanJson.startsWith('```json')) {
+            cleanJson = cleanJson.replace(/^```json\s*/i, '').replace(/\s*```$/, '');
+        } else if (cleanJson.startsWith('```')) {
+            cleanJson = cleanJson.replace(/^```\s*/, '').replace(/\s*```$/, '');
+        }
+
+        let diagnostico;
+        try {
+            diagnostico = JSON.parse(cleanJson);
+        } catch (parseErr) {
+            console.warn('[AI Pre-diagnóstico] Falló parseo JSON directo, intentando extraer bloque JSON:', parseErr.message);
+            const match = cleanJson.match(/\{[\s\S]*\}/);
+            if (match) {
+                diagnostico = JSON.parse(match[0]);
+            } else {
+                throw parseErr;
+            }
+        }
 
         res.json({
             exito: true,
@@ -154,7 +186,7 @@ Debes responder ESTRICTAMENTE en formato JSON válido con la siguiente estructur
         console.error('[AI Pre-diagnóstico] Error:', error.message);
         res.status(500).json({
             exito: false,
-            error: 'No se pudo procesar el pre-diagnóstico con la IA.'
+            error: 'No se pudo procesar el pre-diagnóstico con la IA: ' + error.message
         });
     }
 });
@@ -202,7 +234,19 @@ Responde ÚNICAMENTE en formato JSON válido con la estructura:
         }];
 
         const rawJson = await callGemini(contents, systemPrompt, 'application/json');
-        const datosVehiculo = JSON.parse(rawJson);
+        let cleanJson = (rawJson || '').trim();
+        if (cleanJson.startsWith('```json')) {
+            cleanJson = cleanJson.replace(/^```json\s*/i, '').replace(/\s*```$/, '');
+        } else if (cleanJson.startsWith('```')) {
+            cleanJson = cleanJson.replace(/^```\s*/, '').replace(/\s*```$/, '');
+        }
+        let datosVehiculo;
+        try {
+            datosVehiculo = JSON.parse(cleanJson);
+        } catch (parseErr) {
+            const match = cleanJson.match(/\{[\s\S]*\}/);
+            datosVehiculo = match ? JSON.parse(match[0]) : {};
+        }
 
         res.json({
             exito: true,

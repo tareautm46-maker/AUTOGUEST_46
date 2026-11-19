@@ -171,9 +171,108 @@
             color: white;
         }
 
+        .appointments-table td.col-acciones {
+            min-width: 260px;
+            padding: 12px 14px;
+        }
+
+        .citas-actions-group {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .btn-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 8px 13px;
+            border-radius: 8px;
+            border: none;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            white-space: nowrap;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.25);
+        }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+        }
+
+        .btn-action:active {
+            transform: translateY(0);
+        }
+
+        .btn-detalles {
+            background: #f39c12;
+            color: #1a1a1a;
+        }
+        .btn-detalles:hover {
+            background: #e67e22;
+            color: #ffffff;
+        }
+
+        .btn-chat {
+            background: #2980b9;
+            color: #ffffff;
+        }
+        .btn-chat:hover {
+            background: #3498db;
+        }
+
+        .btn-guardar-mecanico {
+            background: #34495e;
+            color: #ecf0f1;
+            padding: 8px 11px;
+        }
+        .btn-guardar-mecanico:hover {
+            background: #2c3e50;
+            color: #f39c12;
+        }
+
+        .btn-completar {
+            background: #27ae60;
+            color: #ffffff;
+            padding: 8px 11px;
+        }
+        .btn-completar:hover {
+            background: #2ecc71;
+        }
+
+        .btn-cobrar {
+            background: #8e44ad;
+            color: #ffffff;
+        }
+        .btn-cobrar:hover {
+            background: #9b59b6;
+        }
+
+        .select-mecanico {
+            background: #1e1e1e;
+            border: 1px solid #555;
+            color: #ffffff;
+            padding: 8px 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            max-width: 220px;
+            width: 100%;
+            transition: border-color 0.2s;
+        }
+        .select-mecanico:focus {
+            border-color: #f39c12;
+            outline: none;
+        }
+
         .action-buttons {
             display: flex;
             gap: 10px;
+            flex-wrap: wrap;
         }
 
         .action-buttons .btn {
@@ -322,6 +421,7 @@
         </div>
     </div>
 
+    <script src="/js/toast.js"></script>
     <script src="citas-admin.js"></script>
     <script src="/js/global_nav.js"></script>
 

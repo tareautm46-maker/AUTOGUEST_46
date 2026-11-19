@@ -7,6 +7,7 @@
     <title>Detalle de la Cita - AutoGuest</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <link rel="stylesheet" href="../../style.css">
+    <script src="/js/toast.js"></script>
     <script src="https://sdk.mercadopago.com/js/v2"></script>
     <script
         src="https://www.paypal.com/sdk/js?client-id=AV3YWOgsecWq7gVh6mebi4LkOetFi1ULwCt0GWcO3AjuvGe86rFVzvEUj3wqcsfJ24480P5_7xanUTZG&currency=MXN"></script>
@@ -1179,10 +1180,16 @@
                                 })
                             });
                             const orderAuth = await res.json();
-                            return orderAuth.id;
+                            const finalOrderId = orderAuth.id || orderAuth.orderID;
+                            if (!finalOrderId) throw new Error(orderAuth.message || 'No se recibió ID de orden de PayPal');
+                            return finalOrderId;
                         } catch (err) {
                             console.error('Error creando orden paypal:', err);
-                            alert('No se pudo iniciar PayPal');
+                            if (window.showToast) {
+                                window.showToast('No se pudo iniciar PayPal: ' + err.message, 'error');
+                            } else {
+                                alert('No se pudo iniciar PayPal');
+                            }
                         }
                     },
                     onApprove: async function (data) {
@@ -1363,10 +1370,16 @@
                                 })
                             });
                             const orderAuth = await res.json();
-                            return orderAuth.id;
+                            const finalOrderId = orderAuth.id || orderAuth.orderID;
+                            if (!finalOrderId) throw new Error(orderAuth.message || 'No se recibió ID de orden de PayPal');
+                            return finalOrderId;
                         } catch (err) {
                             console.error('Error creando orden paypal:', err);
-                            alert('No se pudo iniciar PayPal');
+                            if (window.showToast) {
+                                window.showToast('No se pudo iniciar PayPal: ' + err.message, 'error');
+                            } else {
+                                alert('No se pudo iniciar PayPal');
+                            }
                         }
                     },
                     onApprove: async function (data) {

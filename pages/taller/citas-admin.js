@@ -97,20 +97,28 @@ function mostrarCitas(citas) {
                     </select>
                 </td>
                 <td><span class="status-badge status-${cita.estado.replace(/\s+/g, '')}">${cita.estado}</span></td>
-                <td>
-                    <button class="btn-cambiar-mecanico" onclick="cambiarMecanico('${cita.idCita}')" title="Guardar Mecánico" ${isFinished ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''}>
-                        <i class="fas fa-save"></i>
-                    </button>
-                    <button class="btn" onclick="verDetalles('${cita.idCita}')" style="padding: 8px 12px; font-size: 14px;">Detalles</button>
-                    <!-- BOTÓN VER CHAT (Taller) -->
-                    <button class="btn" onclick="abrirChatAdmin('${cita.idCita}', '${cita.clienteNombre}')" style="padding: 8px 12px; font-size: 14px; background-color: #3498db; margin-left: 5px;">
-                        <i class="fas fa-comments"></i> Chat
-                    </button>
-                    ${!isFinished ?
-                `<button class="btn-completar" onclick="completarCita('${cita.idCita}')" style="background-color: #2ecc71; margin-left: 5px;" title="Completar">
-                            <i class="fas fa-check"></i>
-                        </button>` : ''
-            }
+                <td class="col-acciones">
+                    <div class="citas-actions-group">
+                        <button class="btn-action btn-detalles" onclick="verDetalles('${cita.idCita}')" title="Ver Detalles">
+                            <i class="fas fa-eye"></i> <span>Detalles</span>
+                        </button>
+                        <button class="btn-action btn-chat" onclick="abrirChatAdmin('${cita.idCita}', '${cita.clienteNombre}')" title="Abrir Chat con Cliente">
+                            <i class="fas fa-comments"></i> <span>Chat</span>
+                        </button>
+                        ${!isFinished ? `
+                            <button class="btn-action btn-guardar-mecanico" onclick="cambiarMecanico('${cita.idCita}')" title="Guardar Mecánico Seleccionado">
+                                <i class="fas fa-save"></i>
+                            </button>
+                            <button class="btn-action btn-completar" onclick="completarCita('${cita.idCita}')" title="Marcar como Finalizada">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        ` : ''}
+                        ${cita.estado === 'Esperando Confirmacion Cliente' ? `
+                            <a href="punto_venta.html" class="btn-action btn-cobrar" title="Cobrar Cita en Caja / Punto de Venta">
+                                <i class="fas fa-cash-register"></i> <span>Cobrar</span>
+                            </a>
+                        ` : ''}
+                    </div>
                 </td>
             </tr>
         `;
