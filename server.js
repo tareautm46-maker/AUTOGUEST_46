@@ -93,6 +93,11 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// Redirigir rutas obsoletas del mecánico a su portal principal
+app.get('/pages/mecanico/dashboard_mecanico.html', (req, res) => {
+    res.redirect('/portal_mecanico.html');
+});
+
 // --- RUTAS DE DEPURACIÓN (ACCESO RÁPIDO) ---
 app.get('/debug-login-taller', (req, res) => {
     req.session.userId = 'ADM01';

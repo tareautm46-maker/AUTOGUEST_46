@@ -5,6 +5,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const isDashboard = pathname.includes('dashboard_cliente.html') ||
         pathname.includes('dashboard_taller.html') ||
         pathname.includes('dashboard_mecanico.html') ||
+        pathname.includes('portal_taller.html') ||
+        pathname.includes('portal_mecanico.html') ||
         pathname.endsWith('/') ||
         pathname.includes('home.html') ||   // La landing page tiene su propio header
         pathname.includes('index.html'); // Index is the true home
@@ -94,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (pathname.includes('/taller/')) {
                 window.location.href = host + '/portal_taller.html';
             } else if (pathname.includes('/mecanico/')) {
-                window.location.href = host + '/pages/mecanico/dashboard_mecanico.html';
+                window.location.href = host + '/portal_mecanico.html';
             } else if (pathname.includes('detalle_taller.html')) {
                 window.location.href = host + '/pages/cliente/dashboard_cliente.html';
             } else {

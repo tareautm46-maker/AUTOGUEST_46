@@ -905,6 +905,12 @@
                 window.location.href = 'index.html';
             });
 
+            document.getElementById('bottomLogoutBtn')?.addEventListener('click', (e) => {
+                e.preventDefault();
+                sessionStorage.clear();
+                window.location.href = 'index.html';
+            });
+
             // Cargar datos reales
             await loadServices();
             await cargarCitas();
@@ -1663,20 +1669,20 @@
 
     <nav class="mobile-bottom-nav">
         <a href="portal_mecanico.html" class="nav-item active">
-            <i class="fas fa-home"></i>
+            <i class="fas fa-wrench"></i>
             <span>Trabajos</span>
         </a>
-        <a href="pages/mecanico/dashboard_mecanico.html" class="nav-item">
-            <i class="fas fa-chart-line"></i>
-            <span>Dashboard</span>
-        </a>
-        <a href="chat.html" class="nav-item">
-            <i class="fas fa-comments"></i>
-            <span>Mensajes</span>
+        <a href="javascript:void(0)" onclick="openNewJobModal()" class="nav-item">
+            <i class="fas fa-plus-circle"></i>
+            <span>Nuevo</span>
         </a>
         <a href="pages/mecanico/perfil_mecanico.html" class="nav-item">
-            <i class="fas fa-user-gear"></i>
-            <span>Perfil</span>
+            <i class="fas fa-user-cog"></i>
+            <span>Mi Perfil</span>
+        </a>
+        <a href="javascript:void(0)" id="bottomLogoutBtn" class="nav-item">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Salir</span>
         </a>
     </nav>
 
