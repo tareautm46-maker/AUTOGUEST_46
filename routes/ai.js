@@ -2,53 +2,67 @@ const express = require('express');
 const router = express.Router();
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-// Usamos el modelo estable disponible en Gemini API
-const GEMINI_MODEL = 'gemini-1.5-flash';
+// Modelos compatibles con auto-fallback en caso de alta demanda o cambios de versión
+const GEMINI_MODELS = ['gemini-3.5-flash', 'gemini-3.1-flash-lite', 'gemini-3.6-flash', 'gemini-3.8-flash'];
 
-// Helper para invocar la API de Gemini mediante fetch nativo
+// Helper para invocar la API de Gemini mediante fetch nativo con reintento automático
 async function callGemini(contents, systemInstruction = null, responseMimeType = null) {
     if (!GEMINI_API_KEY) {
         throw new Error('GEMINI_API_KEY no está configurada en las variables de entorno.');
     }
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
-    
-    const body = {
-        contents: contents,
-        generationConfig: {
-            temperature: 0.3,
-            maxOutputTokens: 1024
+    let lastError = null;
+
+    for (const model of GEMINI_MODELS) {
+        try {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+            
+            const body = {
+                contents: contents,
+                generationConfig: {
+                    temperature: 0.3,
+                    maxOutputTokens: 1024
+                }
+            };
+
+            if (systemInstruction) {
+                body.systemInstruction = {
+                    parts: [{ text: systemInstruction }]
+                };
+            }
+
+            if (responseMimeType) {
+                body.generationConfig.responseMimeType = responseMimeType;
+            }
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.warn(`[AI Warning] Modelo ${model} devolvió ${response.status}: ${errorText.slice(0, 120)}... Reintentando con siguiente modelo...`);
+                lastError = new Error(`HTTP ${response.status}: ${errorText}`);
+                continue; // Probar con el siguiente modelo de la lista
+            }
+
+            const data = await response.json();
+            const candidate = data.candidates?.[0];
+            if (!candidate || !candidate.content?.parts?.[0]?.text) {
+                console.warn(`[AI Warning] Modelo ${model} devolvió contenido vacío. Reintentando...`);
+                continue;
+            }
+
+            return candidate.content.parts[0].text;
+        } catch (callErr) {
+            console.warn(`[AI Warning] Error de conexión con modelo ${model}:`, callErr.message);
+            lastError = callErr;
         }
-    };
-
-    if (systemInstruction) {
-        body.systemInstruction = {
-            parts: [{ text: systemInstruction }]
-        };
     }
 
-    if (responseMimeType) {
-        body.generationConfig.responseMimeType = responseMimeType;
-    }
-
-    const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-    });
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Error en API de Gemini (${response.status}): ${errorText}`);
-    }
-
-    const data = await response.json();
-    const candidate = data.candidates?.[0];
-    if (!candidate || !candidate.content?.parts?.[0]?.text) {
-        throw new Error('Respuesta vacía o bloqueada por políticas de seguridad.');
-    }
-
-    return candidate.content.parts[0].text;
+    throw lastError || new Error('No se pudo obtener respuesta de ningún modelo de IA disponible.');
 }
 
 // ============================================================

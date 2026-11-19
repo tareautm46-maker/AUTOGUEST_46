@@ -213,7 +213,7 @@ router.put('/perfil', isAuthenticated, async (req, res) => {
     } catch (error) {
         if (connection) await connection.rollback();
         console.error('Error al actualizar perfil:', error);
-        res.status(500).json({ error: 'Error al actualizar perfil' });
+        res.status(500).json({ error: error.message || 'Error al actualizar perfil' });
     } finally {
         if (connection) connection.release();
     }
@@ -440,8 +440,15 @@ router.get('/reportes', isAuthenticated, async (req, res) => {
         }
 
         // 1. Ventas físicas POS
-        let ventasQuery = `SELECT id, nombreProducto, cantidad, precioUnitario, total, metodo_pago, fecha FROM venta_fisica WHERE idTaller = ? ${dateFilter} ORDER BY fecha DESC`;
-        const [ventasFisicas] = await db.query(ventasQuery, params);
+        let ventasFisicas = [];
+        try {
+            let ventasQuery = `SELECT id, nombreProducto, cantidad, precioUnitario, total, metodo_pago, fecha FROM venta_fisica WHERE idTaller = ? ${dateFilter} ORDER BY fecha DESC`;
+            const [rows] = await db.query(ventasQuery, params);
+            ventasFisicas = rows;
+        } catch (vErr) {
+            console.warn('Aviso ventas físicas:', vErr.message);
+            ventasFisicas = [];
+        }
 
         // 2. Reparaciones (citas cobradas)
         let citaParams = [idTaller];
@@ -456,13 +463,20 @@ router.get('/reportes', isAuthenticated, async (req, res) => {
             citaDateFilter = 'AND YEAR(fechaHora) = ?';
             citaParams.push(fecha);
         }
-        const [reparaciones] = await db.query(
-            `SELECT c.idCita, u.nombre as clienteNombre, c.monto, c.metodo_pago, c.fechaHora
-             FROM cita c JOIN usuario u ON c.idCliente = u.idUsuario
-             WHERE c.idTaller = ? AND c.codigo_pago_efectivo IS NOT NULL ${citaDateFilter}
-             ORDER BY c.fechaHora DESC`,
-            citaParams
-        );
+        let reparaciones = [];
+        try {
+            const [rows] = await db.query(
+                `SELECT c.idCita, u.nombre as clienteNombre, c.monto, c.metodo_pago, c.fechaHora
+                 FROM cita c JOIN usuario u ON c.idCliente = u.idUsuario
+                 WHERE c.idTaller = ? AND c.codigo_pago_efectivo IS NOT NULL ${citaDateFilter}
+                 ORDER BY c.fechaHora DESC`,
+                citaParams
+            );
+            reparaciones = rows;
+        } catch (cErr) {
+            console.warn('Aviso reparaciones:', cErr.message);
+            reparaciones = [];
+        }
 
         // 3. Ventas online (pedidos_catalogo)
         let webDateFilter = '';

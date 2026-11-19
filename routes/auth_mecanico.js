@@ -58,21 +58,25 @@ router.post('/registro', async (req, res) => {
             [idUsuario, idTaller, especialidad, 'PENDIENTE']
         );
 
-        // 6. Notificar al administrador del taller
-        const [admins] = await db.query('SELECT idUsuario FROM administrador WHERE idTaller = ?', [idTaller]);
-        if (admins.length > 0) {
-            const idAdminTaller = admins[0].idUsuario;
-            await db.query(
-                'INSERT INTO notificacion (idUsuario, titulo, mensaje, tipo) VALUES (?, ?, ?, ?)',
-                [idAdminTaller, 'Nueva Solicitud de Mecánico', 'El mecánico ' + nombre + ' ha solicitado unirse a tu taller. Ve a Gestionar Mecánicos para aprobar o rechazar su solicitud.', 'mecanico']
-            );
+        // 6. Notificar al administrador del taller de forma segura (sin bloquear el registro)
+        try {
+            const [admins] = await db.query('SELECT idUsuario FROM administrador WHERE idTaller = ?', [idTaller]);
+            if (admins.length > 0) {
+                const idAdminTaller = admins[0].idUsuario;
+                await db.query(
+                    'INSERT INTO notificacion (idUsuario, titulo, mensaje, tipo) VALUES (?, ?, ?, ?)',
+                    [idAdminTaller, 'Nueva Solicitud de Mecánico', 'El mecánico ' + nombre + ' ha solicitado unirse a tu taller. Ve a Gestionar Mecánicos para aprobar o rechazar su solicitud.', 'mecanico']
+                );
+            }
+        } catch (notifErr) {
+            console.warn('[Registro Mecánico] No se pudo enviar notificación al admin:', notifErr.message);
         }
 
         res.status(201).json({ success: true, mensaje: 'Mecánico registrado. Esperando aprobación del taller.' });
 
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ mensaje: 'Error en el servidor.' });
+        console.error('[Registro Mecánico Error]:', error);
+        res.status(500).json({ mensaje: error.message || 'Error en el servidor al registrar mecánico.' });
     }
 });
 
