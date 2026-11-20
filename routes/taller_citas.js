@@ -71,9 +71,9 @@ router.get('/citas', isAuthenticated, async (req, res) => {
 
         const idTaller = admin[0].idTaller;
 
-        // Obtener todas las citas
+        // Obtener todas las citas incluyendo datos de cobro y código de efectivo
         const [citas] = await db.query(`
-            SELECT c.idCita, c.fechaHora, c.estado,
+            SELECT c.idCita, c.fechaHora, c.estado, c.codigo_pago_efectivo, c.monto, c.metodo_pago,
                    u.nombre as clienteNombre,
                    v.marca, v.modelo, v.placa,
                    mec.idUsuario as idMecanico,
@@ -87,6 +87,17 @@ router.get('/citas', isAuthenticated, async (req, res) => {
             WHERE c.idTaller = ?
             ORDER BY c.fechaHora DESC
         `, [idTaller]);
+
+        // Auto-asegurar código de pago para citas esperando confirmación que no lo tengan aún
+        const { customAlphabet } = require('nanoid');
+        const nanoidShort = customAlphabet('1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ', 6);
+
+        for (const c of citas) {
+            if (c.estado === 'Esperando Confirmacion Cliente' && !c.codigo_pago_efectivo) {
+                c.codigo_pago_efectivo = nanoidShort();
+                await db.query('UPDATE cita SET codigo_pago_efectivo = ? WHERE idCita = ?', [c.codigo_pago_efectivo, c.idCita]);
+            }
+        }
 
         console.log(`DEBUG: /api/taller/citas - Found ${citas.length} appointments for workshop ${idTaller}`);
         res.json(citas);
@@ -116,9 +127,9 @@ router.get('/citas/:id', isAuthenticated, async (req, res) => {
 
         const idTaller = admin[0].idTaller;
 
-        // Obtener detalles de la cita
+        // Obtener detalles de la cita con código de pago en efectivo
         const [cita] = await db.query(`
-            SELECT c.idCita, c.fechaHora, c.estado,
+            SELECT c.idCita, c.fechaHora, c.estado, c.codigo_pago_efectivo, c.monto, c.metodo_pago,
                    u.nombre as clienteNombre, u.email as clienteEmail,
                    v.marca, v.modelo, v.placa,
                    m.nombre as mecanicoNombre
@@ -135,7 +146,17 @@ router.get('/citas/:id', isAuthenticated, async (req, res) => {
             return res.status(404).json({ error: 'Cita no encontrada' });
         }
 
-        res.json(cita[0]);
+        const citaData = cita[0];
+
+        // Si está esperando confirmación y no tiene código, generarlo y persistirlo
+        if (citaData.estado === 'Esperando Confirmacion Cliente' && !citaData.codigo_pago_efectivo) {
+            const { customAlphabet } = require('nanoid');
+            const nanoidShort = customAlphabet('1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ', 6);
+            citaData.codigo_pago_efectivo = nanoidShort();
+            await db.query('UPDATE cita SET codigo_pago_efectivo = ? WHERE idCita = ?', [citaData.codigo_pago_efectivo, id]);
+        }
+
+        res.json(citaData);
 
     } catch (error) {
         console.error('Error al obtener detalles de la cita:', error);
@@ -264,10 +285,15 @@ router.put('/citas/:id/completar', isAuthenticated, async (req, res) => {
             return res.status(400).json({ error: 'No se puede completar una cita cancelada' });
         }
 
-        // Actualizar estado a Esperando Confirmacion Cliente
+        // Generar código de pago en efectivo
+        const { customAlphabet } = require('nanoid');
+        const nanoidShort = customAlphabet('1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ', 6);
+        const codigo = nanoidShort();
+
+        // Actualizar estado a Esperando Confirmacion Cliente y asignar código de efectivo si no existe
         await db.query(
-            'UPDATE cita SET estado = ? WHERE idCita = ?',
-            ['Esperando Confirmacion Cliente', id]
+            'UPDATE cita SET estado = ?, codigo_pago_efectivo = COALESCE(codigo_pago_efectivo, ?) WHERE idCita = ?',
+            ['Esperando Confirmacion Cliente', codigo, id]
         );
 
         // Notificar al cliente
@@ -282,12 +308,40 @@ router.put('/citas/:id/completar', isAuthenticated, async (req, res) => {
 
         res.json({
             success: true,
-            mensaje: 'Cita marcada como esperando confirmación exitosamente'
+            mensaje: 'Cita marcada como esperando confirmación exitosamente',
+            codigoPago: codigo
         });
 
     } catch (error) {
         console.error('Error al completar cita:', error);
         res.status(500).json({ error: 'Error al completar la cita' });
+    }
+});
+
+// @route   POST /api/taller/citas/:id/generar-codigo
+// @desc    Consultar o regenerar código de pago en efectivo para una cita
+// @access  Private (Admin)
+router.post('/citas/:id/generar-codigo', isAuthenticated, async (req, res) => {
+    const { id } = req.params;
+    try {
+        const [admin] = await db.query('SELECT idTaller FROM administrador WHERE idUsuario = ?', [req.session.userId]);
+        if (!admin || admin.length === 0) return res.status(404).json({ error: 'Taller no encontrado' });
+
+        const [cita] = await db.query('SELECT codigo_pago_efectivo, estado FROM cita WHERE idCita = ? AND idTaller = ?', [id, admin[0].idTaller]);
+        if (!cita || cita.length === 0) return res.status(404).json({ error: 'Cita no encontrada' });
+
+        let codigo = cita[0].codigo_pago_efectivo;
+        if (!codigo) {
+            const { customAlphabet } = require('nanoid');
+            const nanoidShort = customAlphabet('1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ', 6);
+            codigo = nanoidShort();
+            await db.query('UPDATE cita SET codigo_pago_efectivo = ? WHERE idCita = ?', [codigo, id]);
+        }
+
+        res.json({ success: true, codigo });
+    } catch (e) {
+        console.error('Error al consultar/generar código:', e);
+        res.status(500).json({ error: 'Error al consultar código' });
     }
 });
 

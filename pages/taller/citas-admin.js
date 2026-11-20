@@ -96,7 +96,17 @@ function mostrarCitas(citas) {
                         <option value="">Cargando...</option>
                     </select>
                 </td>
-                <td><span class="status-badge status-${cita.estado.replace(/\s+/g, '')}">${cita.estado}</span></td>
+                <td>
+                    <span class="status-badge status-${cita.estado.replace(/\s+/g, '')}">${cita.estado}</span>
+                    ${cita.codigo_pago_efectivo ? `
+                        <div style="margin-top: 6px;">
+                            <span style="display: inline-flex; align-items: center; gap: 5px; background: rgba(243, 156, 18, 0.15); border: 1px solid rgba(243, 156, 18, 0.4); color: #f1c40f; padding: 3px 8px; border-radius: 6px; font-size: 12px; font-family: monospace; font-weight: bold;" title="Código de pago en efectivo para entregar vehículo">
+                                <i class="fas fa-key"></i> ${cita.codigo_pago_efectivo}
+                                <button onclick="navigator.clipboard.writeText('${cita.codigo_pago_efectivo}'); if(window.showToast) window.showToast('Código copiado: ${cita.codigo_pago_efectivo}', 'success', 2000);" style="background:none; border:none; color:#f39c12; cursor:pointer; padding:0 2px;" title="Copiar código al portapapeles"><i class="fas fa-copy"></i></button>
+                            </span>
+                        </div>
+                    ` : ''}
+                </td>
                 <td class="col-acciones">
                     <div class="citas-actions-group">
                         <button class="btn-action btn-detalles" onclick="verDetalles('${cita.idCita}')" title="Ver Detalles">
@@ -318,6 +328,47 @@ window.verDetalles = async (idCita) => {
         if (document.getElementById('modalMecanico')) document.getElementById('modalMecanico').textContent = cita.mecanicoNombre || 'Sin asignar';
         if (document.getElementById('modalFecha')) document.getElementById('modalFecha').textContent = new Date(cita.fechaHora).toLocaleString();
         if (document.getElementById('modalEstado')) document.getElementById('modalEstado').textContent = cita.estado;
+
+        // Código de Pago en Efectivo
+        const codigoEl = document.getElementById('modalCodigoPago');
+        const codigoRow = document.getElementById('modalCodigoPagoRow');
+        const copyBtn = document.getElementById('btnCopiarCodigoModal');
+
+        let codigoVal = cita.codigo_pago_efectivo;
+
+        // Si la cita está esperando confirmación y no tiene código generado aún, solicitar su generación automática
+        if (!codigoVal && cita.estado === 'Esperando Confirmacion Cliente') {
+            try {
+                const genRes = await fetch(`/api/taller/citas/${idCita}/generar-codigo`, { method: 'POST' });
+                if (genRes.ok) {
+                    const genData = await genRes.json();
+                    codigoVal = genData.codigo;
+                }
+            } catch (errGen) {
+                console.warn('Error al auto-generar código en modal:', errGen);
+            }
+        }
+
+        if (codigoEl) {
+            codigoEl.textContent = codigoVal || '---';
+        }
+
+        if (copyBtn) {
+            copyBtn.onclick = () => {
+                if (codigoVal) {
+                    navigator.clipboard.writeText(codigoVal);
+                    if (window.showToast) {
+                        window.showToast(`Código copiado: ${codigoVal}`, 'success', 2000);
+                    } else {
+                        alert(`Código copiado: ${codigoVal}`);
+                    }
+                } else {
+                    if (window.showToast) {
+                        window.showToast('No hay código disponible para esta cita.', 'warning');
+                    }
+                }
+            };
+        }
 
         modal.style.display = 'flex'; // Mostrar modal (usando flex para centrar según tu CSS)
         modal.classList.add('active'); // O usar clase active si tu CSS lo requiere

@@ -176,7 +176,15 @@ router.post('/finalizar-cita/:id', async (req, res) => {
     const { id } = req.params;
 
     try {
-        await db.query('UPDATE cita SET estado = ? WHERE idCita = ?', ['Esperando Confirmacion Cliente', id]);
+        const { customAlphabet } = require('nanoid');
+        const nanoidShort = customAlphabet('1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ', 6);
+        const codigo = nanoidShort();
+
+        // Generar código de pago en efectivo si aún no existe y pasar a Esperando Confirmacion Cliente
+        await db.query(
+            'UPDATE cita SET estado = ?, codigo_pago_efectivo = COALESCE(codigo_pago_efectivo, ?) WHERE idCita = ?',
+            ['Esperando Confirmacion Cliente', codigo, id]
+        );
 
         // Notificar al cliente
         const [citaRow] = await db.query('SELECT idCliente FROM cita WHERE idCita = ?', [id]);
@@ -188,7 +196,7 @@ router.post('/finalizar-cita/:id', async (req, res) => {
             );
         }
 
-        res.json({ success: true, message: 'Trabajo finalizado, esperando confirmación del cliente.' });
+        res.json({ success: true, message: 'Trabajo finalizado, esperando confirmación del cliente.', codigoPago: codigo });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Error al finalizar trabajo.' });

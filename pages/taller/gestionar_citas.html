@@ -417,6 +417,23 @@
                 <li><span class="label">Placa:</span> <span class="value" id="modalPlaca"></span></li>
                 <li><span class="label">Mecánico Asignado:</span> <span class="value" id="modalMecanico"></span></li>
                 <li><span class="label">Fecha y Hora:</span> <span class="value" id="modalFecha"></span></li>
+                <li><span class="label">Estado Actual:</span> <span class="value" id="modalEstado"></span></li>
+                <li id="modalCodigoPagoRow" style="background: rgba(243, 156, 18, 0.12); border: 1.5px dashed #f39c12; border-radius: 8px; padding: 14px; margin-top: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <span class="label" style="color: #f39c12; font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px;">
+                            <i class="fas fa-key"></i> Código de Pago (Efectivo):
+                        </span>
+                        <small style="color: #cccccc; font-size: 12px; display: block; margin-top: 3px;">
+                            Proporciona este código al cliente para que libere su auto en su portal
+                        </small>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span class="value" id="modalCodigoPago" style="font-size: 1.5em; letter-spacing: 3px; color: #f1c40f; font-weight: 800; font-family: monospace; background: #1a1a1a; padding: 4px 12px; border-radius: 6px; border: 1px solid #555;">---</span>
+                        <button id="btnCopiarCodigoModal" class="btn-action" style="padding: 7px 12px; font-size: 13px; background: #f39c12; color: #1a1a1a; cursor: pointer;" title="Copiar código al portapapeles">
+                            <i class="fas fa-copy"></i> Copiar
+                        </button>
+                    </div>
+                </li>
             </ul>
         </div>
     </div>
